@@ -2,9 +2,17 @@
 
 A simple plugin for running .NET tests from Neovim.
 
+## Requirements
+
+- The [.NET CLI](https://learn.microsoft.com/en-us/dotnet/core/tools/): for building and running tests
+- [skywind3000/asyncrun.vim](https://github.com/skywind3000/asyncrun.vim): to display build and test results in the quickfix menu
+    - Not a strict dependency if you implement your own build runner via `opts.build.cmd_runner`
+- (OPTIONAL) [mfussenegger/nvim-dap](https://github.com/mfussenegger/nvim-dap): for debugging tests
+- (OPTIONAL) [seblyng/roslyn.nvim](https://github.com/seblyng/roslyn.nvim): to run tests for the selected sln
+
 ## Usage
 
-This plugin exposes a few methods for running tests
+This plugin exposes a few functions for running tests
 
 ```lua
 local dotnet_test = require("dotnet-test")
@@ -20,6 +28,7 @@ dotnet_test.run_test({ debug = true })
 dotnet_test.run_current_file()
 
 -- Will run all tests in the current sln
+-- Requires
 dotnet_test.run_target()
 
 -- Lower-level wrapper for invoking the `dotnet test` CLI
@@ -44,7 +53,7 @@ return {
     local dotnet_test = require("dotnet-test")
 
     -- This plugin does not require calling setup if you're using defaults.
-    -- I find the `dotnet build` cmd verbose so I set it to quiet
+    -- I find the `dotnet build` cmd verbose, so I set it to quiet
     dotnet_test.setup({
       build = {
         args = { "--verbosity", "quiet" },
