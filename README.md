@@ -44,10 +44,9 @@ With [lazy.nvim](https://github.com/folke/lazy.nvim):
 return {
   "austincrft/dotnet-test.nvim",
   dependencies = {
-     -- Used as the default build runner. Optional if you implement your own via build.cmd_runner
-    "skywind3000/asyncrun.vim",
-    -- Used to run all tests in the current sln. Optional if you don't use this feature or provide an explicit target
-    "seblyng/roslyn.nvim"
+    "skywind3000/asyncrun.vim", -- Required, unless you implement your own build runner
+    "mfussenegger/nvim-dap", -- Optional, required for debugging
+    "seblyng/roslyn.nvim", -- Optional, required for running all tests in sln
   },
   config = function()
     local dotnet_test = require("dotnet-test")
