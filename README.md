@@ -59,7 +59,7 @@ return {
       },
     })
 
-    -- Creates buffer-scoped mappings for tests
+    -- Creates buffer-scoped mappings for running tests
     vim.api.nvim_create_autocmd("FileType", {
       pattern = "cs",
       callback = function()
