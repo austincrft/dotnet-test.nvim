@@ -183,7 +183,9 @@ local function find_dotnet_target()
       notify("No targets found" .. dir, vim.log.levels.DEBUG)
     else
       if #targets == 1 then
-        return targets[1]
+        local target = targets[1]
+        notify("target: " .. target, vim.log.levels.DEBUG)
+        return target
       else
         -- TODO: Show picker
         local msg = "Multiple targets found at " .. dir .. ": " .. table.concat(targets, ", ")
@@ -258,6 +260,7 @@ function M.run_dotnet_test_cli(opts)
         table.insert(args, '"' .. opts.filter .. '"')
       end
 
+      ---@diagnostic disable-next-line: missing-fields
       handle = vim.uv.spawn("dotnet", {
         args = args,
         env = { "VSTEST_HOST_DEBUG=1" },
@@ -332,50 +335,81 @@ local function get_curr_file_toplevel_types()
     return {}
   end
 
-  local tree = parser:parse()[1]
-  local root = tree:root()
-  local types = {}
+  local function get_namespace(node)
+    local type = node:type()
+    local is_file_scoped
+    if type == "file_scoped_namespace_declaration" then
+      is_file_scoped = true
+    elseif type == "namespace_declaration" then
+      is_file_scoped = false
+    else
+      return nil
+    end
 
-  -- Helper to get namespace name
-  local function get_namespace()
-    for child in root:iter_children() do
-      if child:type() == "namespace_declaration" then
-        for ns_child in child:iter_children() do
-          if ns_child:type() == "qualified_name" or ns_child:type() == "identifier" then
-            return ts.get_node_text(ns_child, bufnr)
-          end
-        end
-      elseif child:type() == "file_scoped_namespace_declaration" then
-        for ns_child in child:iter_children() do
-          if ns_child:type() == "qualified_name" or ns_child:type() == "identifier" then
-            return ts.get_node_text(ns_child, bufnr)
-          end
-        end
+    for ns_child in node:iter_children() do
+      if ns_child:type() == "identifier" then
+        return { is_file_scoped = is_file_scoped, name = ts.get_node_text(ns_child, bufnr) }
       end
     end
     return nil
   end
 
-  local namespace = get_namespace()
+  local function get_child_types(namespace, node)
+    local type = node:type()
 
-  for child in root:iter_children() do
-    local t = child:type()
-    if t == "class_declaration" or t == "struct_declaration" or t == "record_declaration" then
+    if type == "class_declaration" or type == "struct_declaration" or type == "record_declaration" then
       local type_name = nil
-      for type_child in child:iter_children() do
+      for type_child in node:iter_children() do
         if type_child:type() == "identifier" then
           type_name = ts.get_node_text(type_child, bufnr)
           break
         end
       end
+
       if type_name then
         if namespace then
-          table.insert(types, namespace .. "." .. type_name)
+          return namespace .. "." .. type_name
         else
-          table.insert(types, type_name)
+          return type_name
         end
       end
     end
+  end
+
+
+  local file_scoped_namespace
+  local types = {}
+  local tree = parser:parse()[1]
+  local root = tree:root()
+
+  -- Iterate syntax tree for top-level types
+  for child in root:iter_children() do
+    local namespace = file_scoped_namespace and nil or get_namespace(child)
+    if namespace then
+      -- For file-scoped namespace, store name and continue iteration at this level
+      if namespace.is_file_scoped then
+        file_scoped_namespace = namespace.name
+        notify("file-scoped namespace: " .. file_scoped_namespace, vim.log.levels.DEBUG)
+        goto continue
+      end
+
+      -- For block-scoped namespace, iterate children
+      notify("block-scoped namespace: " .. namespace.name, vim.log.levels.DEBUG)
+      for ns_child in child:iter_children() do
+        local ns_child_type = ns_child:type()
+        if ns_child_type == "declaration_list" then
+          for declaration_child in ns_child:iter_children() do
+            local type_name = get_child_types(namespace.name, declaration_child)
+            table.insert(types, type_name)
+          end
+        end
+      end
+    else
+      local type_name = get_child_types(file_scoped_namespace or nil, child)
+      table.insert(types, type_name)
+    end
+
+    ::continue::
   end
 
   return types
