@@ -347,7 +347,7 @@ local function get_curr_file_toplevel_types()
     end
 
     for ns_child in node:iter_children() do
-      if ns_child:type() == "identifier" then
+      if ns_child:type() == "qualified_name" or ns_child:type() == "identifier" then
         return { is_file_scoped = is_file_scoped, name = ts.get_node_text(ns_child, bufnr) }
       end
     end
@@ -384,7 +384,11 @@ local function get_curr_file_toplevel_types()
 
   -- Iterate syntax tree for top-level types
   for child in root:iter_children() do
-    local namespace = file_scoped_namespace and nil or get_namespace(child)
+    local namespace
+    if not file_scoped_namespace then
+      namespace = get_namespace(child)
+    end
+
     if namespace then
       -- For file-scoped namespace, store name and continue iteration at this level
       if namespace.is_file_scoped then
