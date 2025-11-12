@@ -5,6 +5,7 @@ A simple plugin for running .NET tests from Neovim.
 ## Requirements
 
 - The [.NET CLI](https://learn.microsoft.com/en-us/dotnet/core/tools/): for building and running tests
+- [nvim-treesitter/nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter): for syntax parsing to find tests
 - [skywind3000/asyncrun.vim](https://github.com/skywind3000/asyncrun.vim): to display build and test results in the quickfix menu
     - Not a strict dependency if you implement your own build runner via `opts.build.cmd_runner`
 - (OPTIONAL) [mfussenegger/nvim-dap](https://github.com/mfussenegger/nvim-dap): for debugging tests

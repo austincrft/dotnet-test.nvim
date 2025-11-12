@@ -30,13 +30,8 @@ local config = {
   }
 }
 
----@class PartialConfig
----@field log_level vim.log.levels|nil
----@field find_target_max_iter number|nil
----@field build BuildConfig|nil
----@field test TestConfig|nil
 ---Setup for plugin, optional if using defaults
----@param opts table
+---@param opts Config
 function M.setup(opts)
   config = vim.tbl_extend("force", config, opts or {})
 end
